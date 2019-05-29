@@ -74,21 +74,38 @@
 # Efektyvumo/spartos analizė:
 
 ```shell
-Kai sz = 10000:
+int sz = 1;;
+Kai push_back(sz) 10000 kartu:
 - std::vector užtruko: 0.0002537 sek.
 - mano vector užtruko: 0.000224 sek.
-Kai sz = 100000:
+Kai push_back(sz) 100000 kartu:
 - std::vector užtruko: 0.0022329 sek.
 - mano vector užtruko: 0.002539 sek.
-Kai sz = 1000000:
+Kai push_back(sz) 1000000 kartu:
 - std::vector užtruko: 0.0208856 sek.
 - mano vector užtruko: 0.0188308 sek.
-Kai sz = 10000000:
+Kai push_back(sz) 10000000 kartu:
 - std::vector užtruko: 0.229281 sek.
 - mano vector užtruko: 0.229431 sek.
-Kai sz = 100000000:
+Kai push_back(sz) 100000000 kartu:
 - std::vector užtruko: 2.16319 sek.
 - mano vector užtruko: 2.073 sek.
+```
+
+```shell
+studentas a("vardas", "pavarde", {1, 2, 3}, 10, 4);
+kai push_back(a) 10000 kartu:
+- std::vector užtruko: 0.0304532 sek.
+- mano vector užtruko: 0.028524 sek.
+kai push_back(a) 100000 kartu:
+- std::vector užtruko: 0.169153 sek.
+- mano vector užtruko: 0.150419 sek.
+kai push_back(a) 1000000 kartu:
+- std::vector užtruko: 2.23699 sek.
+- mano vector užtruko: 2.11287 sek.
+kai push_back(a) 10000000 kartu:
+- std::vector užtruko: 18.1321 sek.
+- mano vector užtruko: 17.8566 sek.
 ```
 # Atminties perskirstymai
 ## tikrinimas:
