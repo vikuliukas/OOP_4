@@ -3,15 +3,12 @@
 
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <limits>
 
-template <typename T>
+template <class T>
 
 class vector{
-    private:
-    size_t _size, _capacity;
-    T * _data;
-
     public:
     typedef T& reference;
     typedef const T& const_reference;
@@ -20,100 +17,103 @@ class vector{
     typedef std::reverse_iterator<iterator> reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-    vector() : _size{0}, _capacity{0}, _data{new T[_size]} {}
-    vector(size_t size) : _size{ size }, _capacity{ size }, _data{ new T[size] } {}
-    vector(size_t size, T& value) : _size{ size }, _capacity{ size }, _data{ new T[size] } {std::fill_n(_data, size, value); }
-    vector(std::initializer_list<T> list) : _size{list.size()}, _capacity{_size}, _data{new T[_size]} { std::copy(list.begin(), list.end(), _data); }
-    vector(iterator first, iterator last) : _size{last-first}, _capacity{_size}, _data{new T[_size]} {
-        for(size_t i = 0; i < last - first; i++){
-            _data[i] = *(first + i);
+    vector() {
+        _data = _capacity = _size = nullptr;
         }
-    }
-    vector(const vector& x) : _size{x.size()}, _capacity{x.capacity()}, _data{new T[_size]} {std::copy(x.begin(), x.end(), _data); }
-    vector(vector&& x) :  _size{x.size()}, _capacity{x.capacity()}, _data{new T[_size]} {
-        std::move(x.begin(), x.end(), _data);
-        delete[] x._data;
-        x.clear();
-    }
-
-    ~vector(){ delete[] _data; }
-
-    vector& operator=(const vector& x){
-        _size = x.size();
-        _capacity = x.capacity();
-        std::copy(x.begin(), x.end(), _data);
-        return *this;
-    }
+    vector(size_t size) {
+        _data = _alloc.allocate(size);
+        _size = _capacity = _data + size;
+        }
+    vector(size_t size, const T& value) {
+        _data = _alloc.allocate(size);
+        _size = _capacity = _data + size;
+        std::uninitialized_fill(_data, _size, value);
+        }
+    vector(const vector & x) {
+			_data = _alloc.allocate(x.end() - x.begin());
+			_size = _capacity = std::uninitialized_copy(x.begin(), x.end(), _data);
+		}
+    vector(std::initializer_list<T> list){
+            _data = _alloc.allocate(list.end() - list.begin());
+			_size = _capacity = std::uninitialized_copy(list.begin(), list.end(), _data);
+        }
+    vector(iterator first, iterator last) {
+            _data = _alloc.allocate(last - first);
+		    _size = _capacity = std::uninitialized_copy(first, last, _data);
+        }
+    ~vector(){ clear(); }
 
     iterator begin() noexcept { return _data; }
     const_iterator begin() const noexcept { return _data; }
-    iterator end() noexcept { return _data + _size; }
-    const_iterator end() const noexcept { return _data + _size; }
-    reverse_iterator rbegin() noexcept { return reverse_iterator(_data + _size); }
-    const_reverse_iterator rbegin() const noexcept  { return reverse_iterator(_data + _size); }
+    iterator end() noexcept { return _size; }
+    const_iterator end() const noexcept { return _size; }
+    reverse_iterator rbegin() noexcept { return reverse_iterator(_size); }
+    const_reverse_iterator rbegin() const noexcept  { return reverse_iterator(_size); }
     reverse_iterator rend() noexcept { return reverse_iterator(_data); }
     const_reverse_iterator rend() const noexcept { return reverse_iterator(_data); }
     
-    size_t size() const { return _size; }
+    size_t size() const { return _size - _data; }
     size_t max_size() const {  return std::numeric_limits<size_t>::max(); }
-    size_t capacity() const { return _capacity; }
-    bool empty() const { return _size == 0; }
+    size_t capacity() const { return _capacity - _data; }
+    bool empty() const { return _size - _data == 0; }
 
-    void resize (size_t size){
-       if( size < _size ){
-            T *temp = new T[size];
-            std::copy(&_data[0], &_data[size], temp);
-            delete[] _data;
-            _data = temp;
-            _size = size;
-            _capacity = size;
-
+	void resize(size_t size) {
+		if (size == 0) {
+            clear();
+            return;
         }
-        else{
-            resize(size,0);
+		if (size == _capacity - _data){
+            return;
         }
-    }
-
-    void resize (size_t size, const T& val){
-        if( size < _size ){
-            T *temp = new T[size];
-            std::copy(&_data[0], &_data[size], temp);
-            delete[] _data;
-            _data = temp;
-            _size = size;
-            _capacity = size;
-
+		iterator temp_data = _alloc.allocate(size);
+		iterator temp_size, temp_capacity, end;
+		if (size < _size - _data){
+            end = _data + size;
         }
-        if (size > _capacity ) {
-            T *temp = new T[size];
-            std::copy(&_data[0], &_data[_size], temp);
-            delete[] _data;
-            std::fill(&temp[_size], &temp[size], 0);
-            _data = temp;
-            _size = size;
-            _capacity = size;
+		else{
+            end = _size;
         }
-    }
+		std::move(_data, end, temp_data);
+		temp_size = temp_data + (end - _data);
+		temp_capacity = temp_data + size;
+		while (temp_size != temp_capacity) {
+			*(temp_size) = T();
+			temp_size ++;
+		}
+		clear();
+		_data = temp_data;
+		_size = temp_size;
+		_capacity = temp_capacity;
+	}
 
-    void reserve (size_t capacity){
-        if(capacity > _capacity){
-            *temp = new T[capacity];
-            std::copy(&_data[0], &_data[_size], temp);
-            delete[] _data;
-            _data = temp;
+    void reserve(size_t size) {
+        if (size > _capacity) {
+            iterator temp_data = _alloc.allocate(size);
+            iterator temp_size = std::uninitialized_copy(_data, _size, temp_data);
+            clear();
+            _data = temp_data;
+            _size = temp_size;
+            _capacity = _data + size;
         }
     }
-
     void shrink_to_fit(){
-        if(_capacity > _size){
-            T *temp = new T[_size];
-            std::move(&_data[0], &_data[_size], temp);
-            delete[] _data;
-            _data = temp;
-            _capacity = _size;
-        }
+        iterator temp_data = _alloc.allocate(_size - _data), temp_size, temp_capacity;
+		std::move(_data, _size, temp_data);
+		temp_size = temp_capacity = temp_data + (_size - _data);
+		clear();
+		_data = temp_data;
+		_size = temp_size;
+		_capacity = temp_capacity;
     }
 
+    vector& operator=(const vector& x){
+        if (&x == this){
+           return *this;
+        }
+		clear();
+		_data = _alloc.allocate(x.end() - x.begin());
+		_size = _capacity = std::uninitialized_copy(x.begin(), x.end(), _data);
+    }
     reference operator[] (size_t n){ return _data[n]; }
     const_reference operator[] (size_t n) const { return _data[n]; }
     reference front() { return _data[0]; }
@@ -123,37 +123,38 @@ class vector{
     T* data() noexcept { return _data; }
     const T* data() const noexcept {return _data; }
 
-    void assign (iterator first, iterator last){
-        _size = last - first;
-        _capacity = last - first;
-        _data = new T[_size];
-        for(size_t i = 0; i < last - first; i++){
-            _data[i] = *(first + i);
+    void assign (size_t size, const T& value){
+       clear();
+		_data = _alloc.allocate(size);
+		_size = _capacity = _data + size;
+		std::uninitialized_fill(_data, _size, value);
+    }
+
+    void assign (iterator first, iterator last) {
+        _data = _alloc.allocate(last - first);
+	    _size = _capacity = std::uninitialized_copy(first, last, _data);
+    }
+
+	void clear() {
+		if (_data) {
+			iterator it = _capacity;
+			while (it != _data) _alloc.destroy(--it);
+			_alloc.deallocate(_data, _size - _data);
+			_data = _size = _capacity = nullptr;
+		}
+	}
+    
+	void push_back(const T & value) {
+		if (_size == _capacity){
+            grow();
         }
-    }
-
-    void assign (size_t n, const T& val){
-        _size = n;
-		_capacity = n;
-		delete[] _data;
-		T * _data = new T[_size];
-		std::fill_n(_data, _size, val);
-    }
-
-    void assign (std::initializer_list<T> il){
-        _size = il.size();
-        _capacity = _size;
-        _data = new T[_size];
-        std::copy(il.begin(), il.end(), _data);
-    }
-
-	void push_back(const T & n) {
-		if (_size == _capacity) resize(_size * 1.5, 0);
-		_data[_size] = n;
-		_size++;
+        _alloc.construct(_size++, value);
 	}
 
-    void pop_back(){ _size--; }
+    void pop_back(){
+        _size--;
+        _alloc.destroy(_size + 1);
+    }
 
     void swap(vector& x) {
         std::swap(_size, x._size);
@@ -161,13 +162,19 @@ class vector{
         std::swap(_data, x._data);
     }
 
-    void clear() {
-		_size = 0;
-		delete[] _data;
-		_data = new T[_capacity];
+    private:
+    iterator _size, _capacity, _data;
+    std::allocator<T> _alloc;
+	void grow()
+	{
+		size_t size = std::max(2 * (_capacity - _data), ptrdiff_t(1));
+		iterator temp_data = _alloc.allocate(size);
+		iterator temp_size = std::uninitialized_copy(_data, _size, temp_data);
+		clear();
+		_data = temp_data;
+		_size = temp_size;
+		_capacity = _data + size;
 	}
-
 };
-
 
 #endif
