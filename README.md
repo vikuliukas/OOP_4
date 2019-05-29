@@ -1,6 +1,7 @@
 # OOP_4
 
 # Vector kurimas
+- Mano vektoriaus realizaciją galima rasti faile `vector.h`
 
 # Užduoties tikslas:
 - sukurti veikiantį vektorių.
@@ -73,24 +74,24 @@
 # Efektyvumo/spartos analizė:
 
 ```shell
-##Kai sz = 10000:
+Kai sz = 10000:
 - std::vector užtruko: 0.0002537 sek.
 - mano vector užtruko: 0.000224 sek.
-##Kai sz = 100000:
+Kai sz = 100000:
 - std::vector užtruko: 0.0022329 sek.
 - mano vector užtruko: 0.002539 sek.
-##Kai sz = 1000000:
+Kai sz = 1000000:
 - std::vector užtruko: 0.0208856 sek.
 - mano vector užtruko: 0.0188308 sek.
-##Kai sz = 10000000:
+Kai sz = 10000000:
 - std::vector užtruko: 0.229281 sek.
 - mano vector užtruko: 0.229431 sek.
-##Kai sz = 100000000:
+Kai sz = 100000000:
 - std::vector užtruko: 2.16319 sek.
 - mano vector užtruko: 2.073 sek.
 ```
-## Atminties perskirstymai
-# tikrinimas:
+# Atminties perskirstymai
+## tikrinimas:
 ```c++
 	int t1=0,t2=0;
 	unsigned int sz = 100000000;
@@ -112,7 +113,7 @@
 	}
 	std::cout<<"mano vector: "<<t2<<" kartus\n";
 ```
-# rezultatas:
+## rezultatas:
 ```shell
 std::vector: 27 kartus
 mano vector: 27 kartus
